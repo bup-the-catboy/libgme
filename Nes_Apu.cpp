@@ -19,7 +19,9 @@ static int const amp_range = 15;
 
 Nes_Apu::Nes_Apu() :
 	square1( &square_synth ),
-	square2( &square_synth )
+	square2( &square_synth ),
+	square3( &square_synth ),
+	square4( &square_synth )
 {
 	tempo_ = 1.0;
 	dmc.apu = this;
@@ -28,9 +30,13 @@ Nes_Apu::Nes_Apu() :
 
 	oscs [0] = &square1;
 	oscs [1] = &square2;
-	oscs [2] = &triangle;
-	oscs [3] = &noise;
+	oscs [2] = &triangle1;
+	oscs [3] = &noise1;
 	oscs [4] = &dmc;
+	oscs [5] = &square3;
+	oscs [6] = &square4;
+	oscs [7] = &triangle2;
+	oscs [8] = &noise2;
 
 	output( NULL );
 	volume( 1.0 );
@@ -40,8 +46,10 @@ Nes_Apu::Nes_Apu() :
 void Nes_Apu::treble_eq( const blip_eq_t& eq )
 {
 	square_synth.treble_eq( eq );
-	triangle.synth.treble_eq( eq );
-	noise.synth.treble_eq( eq );
+	triangle1.synth.treble_eq( eq );
+	triangle2.synth.treble_eq( eq );
+	noise1.synth.treble_eq( eq );
+	noise2.synth.treble_eq( eq );
 	dmc.synth.treble_eq( eq );
 }
 
@@ -51,23 +59,31 @@ void Nes_Apu::enable_nonlinear( double v )
 	square_synth.volume( 1.3 * 0.25751258 / 0.742467605 * 0.25 / amp_range * v );
 
 	const double tnd = 0.48 / 202 * nonlinear_tnd_gain();
-	triangle.synth.volume( 3.0 * tnd );
-	noise.synth.volume( 2.0 * tnd );
+	triangle1.synth.volume( 3.0 * tnd );
+	triangle2.synth.volume( 3.0 * tnd );
+	noise1.synth.volume( 2.0 * tnd );
+	noise2.synth.volume( 2.0 * tnd );
 	dmc.synth.volume( tnd );
 
-	square1 .last_amp = 0;
-	square2 .last_amp = 0;
-	triangle.last_amp = 0;
-	noise   .last_amp = 0;
-	dmc     .last_amp = 0;
+	square1  .last_amp = 0;
+	square2  .last_amp = 0;
+	square3  .last_amp = 0;
+	square4  .last_amp = 0;
+	triangle1.last_amp = 0;
+	triangle2.last_amp = 0;
+	noise1   .last_amp = 0;
+	noise2   .last_amp = 0;
+	dmc      .last_amp = 0;
 }
 
 void Nes_Apu::volume( double v )
 {
 	dmc.nonlinear = false;
 	square_synth.volume(   0.1128  / amp_range * v );
-	triangle.synth.volume( 0.12765 / amp_range * v );
-	noise.synth.volume(    0.0741  / amp_range * v );
+	triangle1.synth.volume( 0.12765 / amp_range * v );
+	triangle2.synth.volume( 0.12765 / amp_range * v );
+	noise1.synth.volume(    0.0741  / amp_range * v );
+	noise2.synth.volume(    0.0741  / amp_range * v );
 	dmc.synth.volume(      0.42545 / 127 * v );
 }
 
@@ -92,8 +108,12 @@ void Nes_Apu::reset( bool pal_mode, int initial_dmc_dac )
 
 	square1.reset();
 	square2.reset();
-	triangle.reset();
-	noise.reset();
+	square3.reset();
+	square4.reset();
+	triangle1.reset();
+	triangle2.reset();
+	noise1.reset();
+	noise2.reset();
 	dmc.reset();
 
 	last_time = 0;
@@ -109,10 +129,11 @@ void Nes_Apu::reset( bool pal_mode, int initial_dmc_dac )
 		write_register( 0, addr, (addr & 3) ? 0x00 : 0x10 );
 
 	dmc.dac = initial_dmc_dac;
-	if ( !dmc.nonlinear )
-		triangle.last_amp = 15;
-	if ( !dmc.nonlinear ) // TODO: remove?
+	if ( !dmc.nonlinear ) {
+		triangle1.last_amp = 15;
+		triangle2.last_amp = 15;
 		dmc.last_amp = initial_dmc_dac; // prevent output transition
+	}
 }
 
 void Nes_Apu::irq_changed()
@@ -170,8 +191,12 @@ void Nes_Apu::run_until_( nes_time_t end_time )
 		// run oscs to present
 		square1.run( last_time, time );
 		square2.run( last_time, time );
-		triangle.run( last_time, time );
-		noise.run( last_time, time );
+		square3.run( last_time, time );
+		square4.run( last_time, time );
+		triangle1.run( last_time, time );
+		triangle2.run( last_time, time );
+		noise1.run( last_time, time );
+		noise2.run( last_time, time );
 		last_time = time;
 
 		if ( time == end_time )
@@ -191,11 +216,17 @@ void Nes_Apu::run_until_( nes_time_t end_time )
 		 		// clock length and sweep on frames 0 and 2
 				square1.clock_length( 0x20 );
 				square2.clock_length( 0x20 );
-				noise.clock_length( 0x20 );
-				triangle.clock_length( 0x80 ); // different bit for halt flag on triangle
+				square3.clock_length( 0x20 );
+				square4.clock_length( 0x20 );
+				noise1.clock_length( 0x20 );
+				noise2.clock_length( 0x20 );
+				triangle1.clock_length( 0x80 ); // different bit for halt flag on triangle
+				triangle2.clock_length( 0x80 ); // different bit for halt flag on triangle
 
-				square1.clock_sweep( -1 );
+				square1.clock_sweep( 0 );
 				square2.clock_sweep( 0 );
+				square3.clock_sweep( 0 );
+				square4.clock_sweep( 0 );
 
 				// frame 2 is slightly shorter in mode 1
 				if ( dmc.pal_mode && frame == 3 )
@@ -218,10 +249,14 @@ void Nes_Apu::run_until_( nes_time_t end_time )
 		}
 
 		// clock envelopes and linear counter every frame
-		triangle.clock_linear_counter();
+		triangle1.clock_linear_counter();
+		triangle2.clock_linear_counter();
 		square1.clock_envelope();
 		square2.clock_envelope();
-		noise.clock_envelope();
+		square3.clock_envelope();
+		square4.clock_envelope();
+		noise1.clock_envelope();
+		noise2.clock_envelope();
 	}
 }
 
@@ -244,8 +279,12 @@ void Nes_Apu::end_frame( nes_time_t end_time )
 	{
 		zero_apu_osc( &square1,  last_time );
 		zero_apu_osc( &square2,  last_time );
-		zero_apu_osc( &triangle, last_time );
-		zero_apu_osc( &noise,    last_time );
+		zero_apu_osc( &square3,  last_time );
+		zero_apu_osc( &square4,  last_time );
+		zero_apu_osc( &triangle1, last_time );
+		zero_apu_osc( &triangle2, last_time );
+		zero_apu_osc( &noise1,    last_time );
+		zero_apu_osc( &noise2,    last_time );
 		zero_apu_osc( &dmc,      last_time );
 	}
 
@@ -291,33 +330,7 @@ void Nes_Apu::write_register( nes_time_t time, nes_addr_t addr, int data )
 
 	run_until_( time );
 
-	if ( addr < 0x4014 )
-	{
-		// Write to channel
-		int osc_index = (addr - start_addr) >> 2;
-		Nes_Osc* osc = oscs [osc_index];
-
-		int reg = addr & 3;
-		osc->regs [reg] = data;
-		osc->reg_written [reg] = true;
-
-		if ( osc_index == 4 )
-		{
-			// handle DMC specially
-			dmc.write_register( reg, data );
-		}
-		else if ( reg == 3 )
-		{
-			// load length counter
-			if ( (osc_enables >> osc_index) & 1 )
-				osc->length_counter = length_table [(data >> 3) & 0x1F];
-
-			// reset square phase
-			if ( osc_index < 2 )
-				((Nes_Square*) osc)->phase = Nes_Square::phase_range - 1;
-		}
-	}
-	else if ( addr == 0x4015 )
+	if ( addr == 0x4015 )
 	{
 		// Channel enables
 		for ( int i = osc_count; i--; )
@@ -363,6 +376,33 @@ void Nes_Apu::write_register( nes_time_t time, nes_addr_t addr, int data )
 		}
 
 		irq_changed();
+	}
+	else if ( addr < 0x4028 )
+	{
+		// Write to channel
+		int osc_index = (addr - start_addr) >> 2;
+		if (osc_index > 4) osc_index--; // skip over status registers
+		Nes_Osc* osc = oscs [osc_index];
+
+		int reg = addr & 3;
+		osc->regs [reg] = data;
+		osc->reg_written [reg] = true;
+
+		if ( osc_index == 4 )
+		{
+			// handle DMC specially
+			dmc.write_register( reg, data );
+		}
+		else if ( reg == 3 )
+		{
+			// load length counter
+			if ( (osc_enables >> osc_index) & 1 )
+				osc->length_counter = length_table [(data >> 3) & 0x1F];
+
+			// reset square phase
+			if ( osc_index < 4 )
+				((Nes_Square*) osc)->phase = Nes_Square::phase_range - 1;
+		}
 	}
 }
 

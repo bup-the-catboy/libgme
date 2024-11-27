@@ -6,6 +6,7 @@
 
 #include "blargg_common.h"
 #include "Blip_Buffer.h"
+#include "Nes_Cpu.h"
 
 class Nes_Apu;
 

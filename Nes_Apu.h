@@ -30,7 +30,7 @@ public:
 
 	// Write to register (0x4000-0x4017, except 0x4014 and 0x4016)
 	static const unsigned int start_addr = 0x4000;
-	static const unsigned int end_addr   = 0x4017;
+	static const unsigned int end_addr   = 0x4027;
 	void write_register( nes_time_t, nes_addr_t, int data );
 
 	// Read from status register at 0x4015
@@ -67,7 +67,7 @@ public:
 	// the specified oscillator is muted and emulation accuracy is reduced.
 	// The oscillators are indexed as follows: 0) Square 1, 1) Square 2,
 	// 2) Triangle, 3) Noise, 4) DMC.
-	static const int osc_count = 5;
+	static const int osc_count = 9;
 	void osc_output( int index, Blip_Buffer* buffer );
 
 	// Set IRQ time callback that is invoked when the time of earliest IRQ
@@ -111,8 +111,12 @@ private:
 	Nes_Osc*            oscs [osc_count];
 	Nes_Square          square1;
 	Nes_Square          square2;
-	Nes_Noise           noise;
-	Nes_Triangle        triangle;
+	Nes_Square          square3;
+	Nes_Square          square4;
+	Nes_Noise           noise1;
+	Nes_Noise           noise2;
+	Nes_Triangle        triangle1;
+	Nes_Triangle        triangle2;
 	Nes_Dmc             dmc;
 
 	double tempo_;

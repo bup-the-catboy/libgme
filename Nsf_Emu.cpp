@@ -165,9 +165,13 @@ blargg_err_t Nsf_Emu::init_sound()
 	{
 		apu_names[count + 0] = "Square 1";
 		apu_names[count + 1] = "Square 2";
-		apu_names[count + 2] = "Triangle";
-		apu_names[count + 3] = "Noise";
+		apu_names[count + 2] = "Triangle 1";
+		apu_names[count + 3] = "Noise 1";
 		apu_names[count + 4] = "DMC";
+		apu_names[count + 5] = "Square 3";
+		apu_names[count + 6] = "Square 4";
+		apu_names[count + 7] = "Triangle 2";
+		apu_names[count + 8] = "Noise 2";
 		count += Nes_Apu::osc_count;
 	}
 

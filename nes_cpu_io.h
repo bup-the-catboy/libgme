@@ -5,7 +5,7 @@
 
 int Nsf_Emu::cpu_read( nes_addr_t addr )
 {
-	int result, i;
+	int result;
 
 	result = cpu::low_mem [addr & 0x7FF];
 	if ( !(addr & 0xE000) )
